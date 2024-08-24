@@ -80,7 +80,7 @@ pub fn tokenize(path: &str) -> Result<String, (i32, String)> {
                         token_stream.push(token_representation);
                     }
                     Err(_) => {
-                        eprintln!("[Line {}] Error: Unexpected character: {c}", linenr + 1);
+                        eprintln!("[line {}] Error: Unexpected character: {c}", linenr + 1);
                         exit_code = 65;
                     }
                 }
