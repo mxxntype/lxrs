@@ -42,7 +42,10 @@ pub fn run() {
     match command.as_str() {
         "tokenize" => match tokenize(filename) {
             Ok(token_stream) => println!("{token_stream}"),
-            Err((exit_code, _)) => process::exit(exit_code),
+            Err((exit_code, token_stream)) => {
+                println!("{token_stream}");
+                process::exit(exit_code);
+            }
         },
         _ => eprintln!("Unknown command: {command}"),
     }
@@ -77,7 +80,7 @@ pub fn tokenize(path: &str) -> Result<String, (i32, String)> {
                         token_stream.push(token_representation);
                     }
                     Err(_) => {
-                        eprintln!("[Line {linenr}] Error: Unexpected character: {c}");
+                        eprintln!("[Line {}] Error: Unexpected character: {c}", linenr + 1);
                         exit_code = 65;
                     }
                 }
