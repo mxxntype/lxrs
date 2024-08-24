@@ -1,8 +1,8 @@
 use std::{env, fs, process, str::FromStr};
-
 use strum::EnumMessage;
+use strum_macros::{Display, EnumMessage, EnumString};
 
-#[derive(strum_macros::Display, strum_macros::EnumString, strum_macros::EnumMessage)]
+#[derive(Display, EnumString, EnumMessage)]
 #[allow(clippy::upper_case_acronyms)]
 enum TokenType {
     #[strum(serialize = "(", message = "LEFT_PAREN")]
@@ -13,6 +13,18 @@ enum TokenType {
     LeftBrace,
     #[strum(serialize = "}", message = "RIGHT_BRACE")]
     RightBrace,
+    #[strum(serialize = "*", message = "STAR")]
+    Star,
+    #[strum(serialize = ".", message = "DOT")]
+    Dot,
+    #[strum(serialize = ",", message = "COMMA")]
+    Comma,
+    #[strum(serialize = "+", message = "PLUS")]
+    Plus,
+    #[strum(serialize = "-", message = "MINUS")]
+    Minus,
+    #[strum(serialize = ";", message = "SEMICOLON")]
+    Semicolon,
     #[strum(serialize = "", message = "EOF")]
     EOF,
 }
@@ -39,7 +51,7 @@ pub fn run() {
 #[must_use]
 pub fn tokenize(filename: &str) -> String {
     let file_contents = fs::read_to_string(filename)
-        .inspect_err(|error| eprintln!("Failed to read file {filename}: {error}"))
+        .inspect_err(|error| eprintln!("Couldn't read file {filename}: {error}"))
         .map(|contents| contents.trim().to_string())
         .unwrap_or_default();
 
