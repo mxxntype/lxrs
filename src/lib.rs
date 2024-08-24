@@ -40,22 +40,27 @@ pub fn run() {
     let filename = &args[2];
 
     match command.as_str() {
-        "tokenize" => {
-            let token_stream = tokenize(filename);
-            println!("{token_stream}");
-        }
+        "tokenize" => match tokenize(filename) {
+            Ok(token_stream) => println!("{token_stream}"),
+            Err((exit_code, _)) => process::exit(exit_code),
+        },
         _ => eprintln!("Unknown command: {command}"),
     }
 }
 
-#[must_use]
-pub fn tokenize(filename: &str) -> String {
-    let file_contents = fs::read_to_string(filename)
-        .inspect_err(|error| eprintln!("Couldn't read file {filename}: {error}"))
+/// Try to tokenize the file located at `path`.
+///
+/// # Errors
+///
+/// This function will return an error if the file contains syntax errors.
+pub fn tokenize(path: &str) -> Result<String, (i32, String)> {
+    let file_contents = fs::read_to_string(path)
+        .inspect_err(|error| eprintln!("Couldn't read file {path}: {error}"))
         .map(|contents| contents.trim().to_string())
         .unwrap_or_default();
 
     let mut token_stream = Vec::<String>::default();
+    let mut exit_code = 0;
 
     for (linenr, line) in file_contents
         .lines()
@@ -63,7 +68,6 @@ pub fn tokenize(filename: &str) -> String {
         .filter(|(_, line)| !line.is_empty())
         .filter(|(_, line)| !line.starts_with("//"))
     {
-        dbg!(&TokenType::RightBrace.to_string());
         for word in line.split_whitespace() {
             for c in word.chars() {
                 match TokenType::from_str(c.to_string().as_str()) {
@@ -72,7 +76,10 @@ pub fn tokenize(filename: &str) -> String {
                             format!("{} {} null", token.get_message().unwrap_or_default(), c);
                         token_stream.push(token_representation);
                     }
-                    Err(_) => eprintln!("[Line {linenr}] Error: Unexpected character: {c}"),
+                    Err(_) => {
+                        eprintln!("[Line {linenr}] Error: Unexpected character: {c}");
+                        exit_code = 65;
+                    }
                 }
             }
         }
@@ -83,5 +90,11 @@ pub fn tokenize(filename: &str) -> String {
         TokenType::EOF.get_message().unwrap_or_default()
     ));
 
-    token_stream.join("\n")
+    let token_stream = token_stream.join("\n");
+
+    if exit_code != 0 {
+        Err((exit_code, token_stream))
+    } else {
+        Ok(token_stream)
+    }
 }
