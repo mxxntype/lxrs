@@ -1,24 +1,20 @@
 use std::{env, fs, process, str::FromStr};
 
-#[derive(strum_macros::Display, strum_macros::EnumString)]
+use strum::EnumMessage;
+
+#[derive(strum_macros::Display, strum_macros::EnumString, strum_macros::EnumMessage)]
 #[allow(clippy::upper_case_acronyms)]
 enum TokenType {
-    #[strum(serialize = "(")]
+    #[strum(serialize = "(", message = "LEFT_PAREN")]
     LeftParen,
-    #[strum(serialize = ")")]
+    #[strum(serialize = ")", message = "RIGHT_PAREN")]
     RightParen,
-    #[strum(serialize = "")]
+    #[strum(serialize = "{", message = "LEFT_BRACE")]
+    LeftBrace,
+    #[strum(serialize = "}", message = "RIGHT_BRACE")]
+    RightBrace,
+    #[strum(serialize = "", message = "EOF")]
     EOF,
-}
-
-impl TokenType {
-    pub const fn as_verbose_token(&self) -> &'static str {
-        match self {
-            Self::LeftParen => "LEFT_PAREN",
-            Self::RightParen => "RIGHT_PAREN",
-            Self::EOF => "EOF",
-        }
-    }
 }
 
 pub fn run() {
@@ -54,30 +50,25 @@ pub fn tokenize(filename: &str) -> String {
         .filter(|line| !line.is_empty())
         .filter(|line| !line.starts_with("//"))
     {
+        dbg!(&TokenType::RightBrace.to_string());
         for word in line.split_whitespace() {
             for c in word.chars() {
                 match TokenType::from_str(c.to_string().as_str()) {
-                    Ok(token_type) => {
-                        token_stream.push(format!("{} {} null", token_type.as_verbose_token(), c));
+                    Ok(token) => {
+                        let token_representation =
+                            format!("{} {} null", token.get_message().unwrap_or_default(), c);
+                        token_stream.push(token_representation);
                     }
-                    Err(_) => todo!("Implement syntax errors"),
+                    Err(err) => todo!("Implement syntax errors: {err}"),
                 }
             }
         }
     }
 
-    token_stream.push(format!("{}  null", TokenType::EOF.as_verbose_token()));
+    token_stream.push(format!(
+        "{}  null",
+        TokenType::EOF.get_message().unwrap_or_default()
+    ));
 
     token_stream.join("\n")
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::TokenType;
-
-    #[test]
-    fn token_serialization() {
-        assert_eq!(TokenType::LeftParen.as_verbose_token(), "LEFT_PAREN");
-        assert_eq!(TokenType::RightParen.as_verbose_token(), "RIGHT_PAREN");
-    }
 }
