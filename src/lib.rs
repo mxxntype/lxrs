@@ -57,10 +57,11 @@ pub fn tokenize(filename: &str) -> String {
 
     let mut token_stream = Vec::<String>::default();
 
-    for line in file_contents
+    for (linenr, line) in file_contents
         .lines()
-        .filter(|line| !line.is_empty())
-        .filter(|line| !line.starts_with("//"))
+        .enumerate()
+        .filter(|(_, line)| !line.is_empty())
+        .filter(|(_, line)| !line.starts_with("//"))
     {
         dbg!(&TokenType::RightBrace.to_string());
         for word in line.split_whitespace() {
@@ -71,7 +72,7 @@ pub fn tokenize(filename: &str) -> String {
                             format!("{} {} null", token.get_message().unwrap_or_default(), c);
                         token_stream.push(token_representation);
                     }
-                    Err(err) => todo!("Implement syntax errors: {err}"),
+                    Err(_) => eprintln!("[Line {linenr}] Error: Unexpected character: {c}"),
                 }
             }
         }
